@@ -1,12 +1,14 @@
-"use client"
+
+'use client';
 import { useState, useEffect } from "react"
 import { Grape, Home, Menu, ShoppingCart, User, Wine, Upload } from 'lucide-react'
 import Link from "next/link"
 import { useGlobalContext } from "@/context/GlobalContext";
 import {toast } from "react-toastify";
-
+import { useRouter } from "next/navigation";
 const Page = () => {
   const { winesRetrieved, setWinesRetrieved } = useGlobalContext();
+  const router = useRouter()
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -24,7 +26,6 @@ const Page = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
 
     try {
       
@@ -62,7 +63,8 @@ const Page = () => {
       setWinesRetrieved((prev) => [...prev, newWine]);
       toast.success("Wine NFT listed successfully!");
       setFormData({ name: "", description: "", vintage: "", region: "", price: "" }); 
-      print(winesRetrieved)
+      router.push("/");
+
     } catch (error) {
       console.error("Error listing NFT:", error);
       toast.error("Failed to list Wine NFT. Please try again.");

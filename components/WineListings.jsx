@@ -1,7 +1,8 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { useGlobalContext } from "@/context/GlobalContext";
 
@@ -15,6 +16,7 @@ const generatePriceHistory = (basePrice) => {
 export default function WinesPage() {
   const [selectedWine, setSelectedWine] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [winesWithPictures, setWinesWithPictures] = useState([]);
   const { user } = useGlobalContext();
 //   {
 //     "address": "0x13e9b432c498500ab70c3628108085086d740df6",
@@ -23,15 +25,6 @@ export default function WinesPage() {
 // }
   const { winesRetrieved } = useGlobalContext();
 
-
-  const winesWithPicture = winesRetrieved.map((wine, index) => {
-    const priceHistory = generatePriceHistory(parseFloat(wine.price));
-    return {
-      ...wine,
-      image: `assets/WineNFT_${index + 1}.png`,
-      priceHistory,
-    };
-  });
 
   const openModal = (wine) => {
     console.log("Selected wine price history:", wine.priceHistory);
@@ -49,13 +42,26 @@ export default function WinesPage() {
     closeModal();
   };
 
+
+    useEffect(() => {
+      const updatedWines = winesRetrieved.map((wine, index) => {
+        const priceHistory = generatePriceHistory(parseFloat(wine.price));
+        return {
+          ...wine,
+          image: `assets/WineNFT_${index + 1}.png`,
+          priceHistory,
+        };
+      });
+      setWinesWithPictures(updatedWines);
+    }, [winesRetrieved]);
+
   return (
     <>
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
         <div className="container mx-auto px-6 py-8">
           <h1 className="text-3xl font-semibold text-gray-800 mb-6">Featured Wine NFTs</h1>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {winesWithPicture.map((wine) => (
+            {winesWithPictures.map((wine) => (
               <Card
                 key={wine.id}
                 className="bg-white cursor-pointer"
