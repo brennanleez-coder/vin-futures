@@ -15,7 +15,14 @@ const generatePriceHistory = (basePrice) => {
 export default function WinesPage() {
   const [selectedWine, setSelectedWine] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = useGlobalContext();
+//   {
+//     "address": "0x13e9b432c498500ab70c3628108085086d740df6",
+//     "isBuyer": true,
+//     "isSeller": false
+// }
   const { winesRetrieved } = useGlobalContext();
+
 
   const winesWithPicture = winesRetrieved.map((wine, index) => {
     const priceHistory = generatePriceHistory(parseFloat(wine.price));

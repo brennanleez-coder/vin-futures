@@ -58,7 +58,8 @@ export const GlobalProvider = ({ children }) => {
   const value = {
     user,
     setUser,
-    winesRetrieved
+    winesRetrieved,
+    setWinesRetrieved
   };
   return (
       <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
