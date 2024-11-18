@@ -57,8 +57,9 @@ const Header = () => {
           address: accounts[0],
         });
         await checkBuyerOrSeller(accounts[0]);
+        toast.success("Wallet connected successfully!");
       } catch (error) {
-        console.error("Connection error:", error);
+        toast.error("Error connecting wallet:", error);
       }
     } else {
       toast.error("Please install MetaMask to connect your wallet.");

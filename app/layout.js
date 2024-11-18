@@ -29,13 +29,24 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GlobalProvider>
-            <div className="flex h-screen bg-white">
-              <LeftSideNavBar />
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
-                {children}
-              </div>
+          <ToastContainer
+            position="bottom-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+          <div className="flex h-screen bg-white">
+            <LeftSideNavBar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header />
+              {children}
             </div>
+          </div>
         </GlobalProvider>
       </body>
     </html>
