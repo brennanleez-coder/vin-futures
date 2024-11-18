@@ -11,8 +11,15 @@ import {
 
 const Page = () => {
   const [selectedWine, setSelectedWine] = useState(null);
+  const [redeemWine, setRedeemWine] = useState(null);
 
-  // Mock data
+  const today = new Date();
+  const oneMonthFromToday = new Date();
+  oneMonthFromToday.setMonth(today.getMonth() + 1);
+
+  const oneWeekFromToday = new Date();
+  oneWeekFromToday.setDate(today.getDate() + 7);
+
   const ownedWines = [
     {
       id: 1,
@@ -23,6 +30,7 @@ const Page = () => {
       rarityScore: 95,
       price: 1.2,
       image: "/assets/WineNFT_1.png",
+      maturityDate: oneMonthFromToday,
     },
     {
       id: 2,
@@ -33,6 +41,7 @@ const Page = () => {
       rarityScore: 88,
       price: 0.8,
       image: "/assets/WineNFT_2.png",
+      maturityDate: oneWeekFromToday,
     },
     {
       id: 3,
@@ -43,6 +52,7 @@ const Page = () => {
       rarityScore: 82,
       price: 0.5,
       image: "/assets/WineNFT_3.png",
+      maturityDate: today,
     },
   ];
 
@@ -74,8 +84,9 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Responsive LineChart */}
-          <div className="w-full flex items-center justify-center h-64"> {/* Adjusted height as needed */}
+          <div className="w-full flex items-center justify-center h-64">
+            {" "}
+            {/* Adjusted height as needed */}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart width={1400} height={280} data={portfolioHistory}>
                 <XAxis dataKey="day" />
@@ -99,7 +110,20 @@ const Page = () => {
           {ownedWines.map((wine) => (
             <div
               key={wine.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+              className={`bg-white rounded-lg shadow-md overflow-hidden ${
+                new Date(wine.maturityDate).toDateString() ===
+                new Date().toDateString()
+                  ? "border-4 border-green-500"
+                  : new Date(wine.maturityDate) - new Date() <=
+                      7 * 24 * 60 * 60 * 1000 &&
+                    new Date(wine.maturityDate) - new Date() > 0
+                  ? "border-4 border-yellow-500"
+                  : new Date(wine.maturityDate) - new Date() <=
+                      30 * 24 * 60 * 60 * 1000 &&
+                    new Date(wine.maturityDate) - new Date() > 0
+                  ? "border-4 border-blue-500"
+                  : ""
+              }`}
             >
               <div className="p-4 relative">
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -136,6 +160,22 @@ const Page = () => {
                 <p className="text-sm text-gray-600 mt-2">
                   Rarity Score: {wine.rarityScore}/100
                 </p>
+                <p
+                  className={`text-sm mt-2 ${
+                    new Date(wine.maturityDate).toDateString() ===
+                    new Date().toDateString()
+                      ? "text-green-600 font-bold"
+                      : "text-gray-600"
+                  }`}
+                >
+                  Maturity Date: {wine.maturityDate.toLocaleDateString()}
+                </p>
+                <p className="mt-2 text-sm font-bold text-purple-600">
+                  Status:{" "}
+                  {new Date(wine.maturityDate) <= new Date()
+                    ? "Matured"
+                    : "Not Matured"}
+                </p>
               </div>
               <div className="px-4 py-3 bg-gray-50 flex justify-between items-center">
                 <span className="text-lg font-semibold text-purple-600">
@@ -147,9 +187,106 @@ const Page = () => {
                 >
                   View Details
                 </button>
+                {new Date(wine.maturityDate).toDateString() ===
+                  new Date().toDateString() && (
+                  <button
+                    onClick={() => setRedeemWine(wine)}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Redeem Now
+                  </button>
+                )}
               </div>
             </div>
           ))}
+          {redeemWine && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg max-w-md w-full">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Confirm Redemption
+                  </h2>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Are you sure you want to redeem{" "}
+                    <strong>{redeemWine.name}</strong>?
+                  </p>
+                  <img
+                    alt={`Wine NFT ${redeemWine.id}`}
+                    className="w-full h-64 object-contain rounded-md mb-4"
+                    src={redeemWine.image}
+                  />
+                </div>
+                <div className="p-4 border-t border-gray-200 flex justify-end space-x-4">
+                  <button
+                    onClick={() => setRedeemWine(null)} // Close the modal
+                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert(`Redeemed ${redeemWine.name}`);
+                      setRedeemWine(null);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Wine Details Modal */}
+          {selectedWine !== null && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg max-w-md w-full">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {ownedWines.find((w) => w.id === selectedWine)?.name}
+                  </h2>
+                </div>
+                <div className="p-4">
+                  <img
+                    alt={`Wine NFT ${selectedWine}`}
+                    className="w-full h-64 object-contain rounded-md mb-4"
+                    src={ownedWines.find((w) => w.id === selectedWine)?.image}
+                  />
+                  <p className="text-sm text-gray-600">
+                    Vintage:{" "}
+                    {ownedWines.find((w) => w.id === selectedWine)?.vintage}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Region:{" "}
+                    {ownedWines.find((w) => w.id === selectedWine)?.region}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Rarity:{" "}
+                    {ownedWines.find((w) => w.id === selectedWine)?.rarity}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Rarity Score:{" "}
+                    {ownedWines.find((w) => w.id === selectedWine)?.rarityScore}
+                    /100
+                  </p>
+                  <p className="text-lg font-semibold text-purple-600 mt-2">
+                    Value:{" "}
+                    {ownedWines.find((w) => w.id === selectedWine)?.price} ETH
+                  </p>
+                </div>
+                <div className="p-4 border-t border-gray-200 flex justify-end">
+                  <button
+                    onClick={() => setSelectedWine(null)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>

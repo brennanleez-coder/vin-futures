@@ -37,6 +37,11 @@ export default function WinesPage() {
     setSelectedWine(null);
   };
 
+  const handleBuy = () => {
+    alert(`Successfully purchased ${selectedWine.name} for ${selectedWine.price} ETH!`);
+    closeModal();
+  };
+
   return (
     <>
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
@@ -76,7 +81,6 @@ export default function WinesPage() {
             ))}
           </div>
 
-          {/* Modal for showing selected wine details and chart */}
           {isModalOpen && selectedWine && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
@@ -95,9 +99,12 @@ export default function WinesPage() {
                 ) : (
                   <p className="text-sm text-gray-500">No price history available</p>
                 )}
-                <div className="flex justify-end mt-4">
-                  <Button variant="outline" onClick={closeModal}>
+                <div className="flex justify-end mt-4 space-x-4">
+                  <Button variant="destructive" onClick={closeModal}>
                     Close
+                  </Button>
+                  <Button variant="outline" onClick={handleBuy}>
+                    Buy Now
                   </Button>
                 </div>
               </div>

@@ -5,15 +5,39 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { useGlobalContext } from '@/context/GlobalContext';
+import WineMarketplaceABI from "@/abi/WineMarketplace.json";
+import { ethers } from "ethers";
+
+const LOCAL_RPC_URL = "http://localhost:8545";
+
+
+
+
 const Header = () => {
     const { user, setUser } = useGlobalContext()
-
+    const checkBuyerOrSeller = async (address) => {
+        const wineMarketplaceContractAddress =
+            "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+        const provider = new ethers.providers.JsonRpcProvider(LOCAL_RPC_URL);
+        const contract = new ethers.Contract(
+            wineMarketplaceContractAddress,
+            WineMarketplaceABI.abi,
+            provider
+        );
+        const isBuyer = await contract.isBuyer(address);
+        const isSeller = await contract.isSeller(address);
+        console.log("isBuyer:", isBuyer);
+        console.log("isSeller:", isSeller);
+        // setUser({ ...user, isBuyer, isSeller });
+        // console.log("User:", user);
+    }
     const connectWallet = async () => {
         if (typeof window.ethereum !== "undefined") {
             try {
                 const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
                 setUser(accounts[0]);
                 console.log(accounts[0]);
+                checkBuyerOrSeller(accounts[0]);
             } catch (error) {
                 console.error("Connection error:", error);
             }
@@ -21,6 +45,12 @@ const Header = () => {
             toast.error("Please install MetaMask to connect your wallet.");
         }
     };
+
+    // useEffect(() => {
+    //     if (user) {
+    //         checkBuyerOrSeller(user);
+    //     }
+    // }, [user]);
 
     return (
         <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
@@ -30,7 +60,7 @@ const Header = () => {
             <div className="flex-1 flex justify-end">
                 {/* <Input className="max-w-md" placeholder="Search for Wine NFTs..." type="search" /> */}
                 {user ? (
-                    <span className="text-gray-800 font-semibold">{`Connected: ${user.slice(0, 6)}...${user.slice(-4)}`}</span>
+                    <span className="text-gray-800 font-semibold">{` Connected: ${user.slice(0, 6)}...${user.slice(-4)}`}</span>
                 ) : (
                     <Button className="ml-4" variant="outline" onClick={connectWallet}>
                         Connect Wallet

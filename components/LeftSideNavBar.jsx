@@ -3,7 +3,7 @@ import React from 'react';
 import { Grape, Home, Wine, User } from "lucide-react";
 import Link from "next/link";
 import { useGlobalContext } from '@/context/GlobalContext';
-
+import RevinedLogo from "@/public/assets/Revined_logo.png";
 const navItems = [
   {
     link: "/",
@@ -30,11 +30,11 @@ const LeftSideNavBar = () => {
 
   return (
     <>
-      {/* Left Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:block">
-        <div className="flex items-center justify-center h-16 border-b border-gray-200">
-          <Wine className="h-8 w-8 text-blue-600" />
-          <span className="ml-2 text-xl font-bold text-gray-800">Vin Futures</span>
+        <div className="flex items-center justify-center h-[68.5px] border-b border-gray-200">
+          <img src="/assets/Revined_logo.png" alt="Revined Logo" className="h-32 w-32" />
+
+          {/* <span className="ml-2 text-xl font-bold text-gray-800">Revined</span> */}
         </div>
         <nav className="mt-6">
           {navItems
