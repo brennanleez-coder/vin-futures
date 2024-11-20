@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Grape, Home, Menu, ShoppingCart, User, Wine } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { useGlobalContext } from "@/context/GlobalContext";
@@ -8,58 +8,58 @@ import WineMarketplaceABI from "@/abi/WineMarketplace.json";
 import { ethers } from "ethers";
 
 const LOCAL_RPC_URL = "http://localhost:8545";
-const buyers = [];
-const sellers = ["0x13e9b432c498500ab70c3628108085086d740df6"];
+const WINE_MARKETPLACE_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+
+const wineProducerAddress = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+const wineDistributorAddress1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+const wineDistributorAddress2 = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
 
 const Header = () => {
   const { user, setUser } = useGlobalContext();
-  const [isClient, setIsClient] = useState(false); // Flag to ensure client-only rendering
+  const [isClient, setIsClient] = useState(false);
 
-  // Check if the current user is a buyer or seller
   const checkBuyerOrSeller = async (address) => {
-    // const wineMarketplaceContractAddress =
-    //     "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
-    // const provider = new ethers.providers.JsonRpcProvider(LOCAL_RPC_URL);
-    // const contract = new ethers.Contract(
-    //     wineMarketplaceContractAddress,
-    //     WineMarketplaceABI.abi,
-    //     provider
-    // );
-    // const isBuyer = await contract.isBuyer(address);
-    // const isSeller = await contract.isSeller(address);
-    // console.log("isBuyer:", isBuyer);
-    // console.log("isSeller:", isSeller);
-    // setUser({ ...user, isBuyer, isSeller });
-    // console.log("User:", user);
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(LOCAL_RPC_URL);
+      const contract = new ethers.Contract(
+        WINE_MARKETPLACE_ADDRESS,
+        WineMarketplaceABI.abi,
+        provider
+      );
 
-    const isBuyer = buyers.includes(address);
-    const isSeller = sellers.includes(address);
-    setUser((prevUser) => ({
-      ...prevUser,
-      address,
-      isBuyer,
-      isSeller,
-    }));
+      // Check roles via contract functions
+      const isBuyer = await contract.isBuyer(address);
+      const isSeller = await contract.isSeller(address);
 
-    console.log(`Address: ${address}`);
-    console.log("isBuyer:", isBuyer);
-    console.log("isSeller:", isSeller);
+      setUser({ address, isBuyer, isSeller });
+      console.log("User Roles:", { address, isBuyer, isSeller });
+    } catch (error) {
+      console.error("Error checking roles:", error);
+    }
   };
 
-  // Connect the user's wallet
   const connectWallet = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(
+          WINE_MARKETPLACE_ADDRESS,
+          WineMarketplaceABI.abi,
+          signer
+        );
+
         const accounts = await window.ethereum.request({
           method: "eth_requestAccounts",
         });
-        setUser({
-          address: accounts[0],
-        });
-        await checkBuyerOrSeller(accounts[0]);
+        const userAddress = accounts[0];
+
+        await checkBuyerOrSeller(userAddress);
+
         toast.success("Wallet connected successfully!");
       } catch (error) {
-        toast.error("Error connecting wallet:", error);
+        toast.error("Error connecting wallet.");
+        console.error("Error:", error);
       }
     } else {
       toast.error("Please install MetaMask to connect your wallet.");
@@ -68,7 +68,7 @@ const Header = () => {
 
   // Ensure client-only rendering
   useEffect(() => {
-    setIsClient(true); // This ensures we don't run dynamic logic during SSR
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
@@ -83,8 +83,7 @@ const Header = () => {
         <Menu className="h-6 w-6 text-gray-600" />
       </div>
       <div className="flex-1 flex justify-end">
-        {/* <Input className="max-w-md" placeholder="Search for Wine NFTs..." type="search" /> */}
-        {isClient && user ? ( // Ensure the content only renders after the client is ready
+        {isClient && user ? (
           <span className="text-gray-800 font-semibold">{`${
             user?.isBuyer
               ? "Buyer"
