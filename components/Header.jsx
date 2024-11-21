@@ -8,7 +8,7 @@ import WineMarketplaceABI from "@/abi/WineMarketplace.json";
 import { ethers } from "ethers";
 
 const LOCAL_RPC_URL = "http://localhost:8545";
-const WINE_MARKETPLACE_ADDRESS = "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c";
+const WINE_MARKETPLACE_ADDRESS = process.env.NEXT_PUBLIC_WINE_MARKETPLACE_ADDRESS;
 
 const Header = () => {
   const { user, setUser } = useGlobalContext();

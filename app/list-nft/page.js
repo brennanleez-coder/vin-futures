@@ -39,9 +39,9 @@ const Page = () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
   
-      const wineNFTAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
-      const wineMarketplaceAddress = "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"; 
-      const wineProducerAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"; 
+      const wineNFTAddress = process.env.NEXT_PUBLIC_WINE_NFT_ADDRESS;
+      const wineMarketplaceAddress = process.env.NEXT_PUBLIC_WINE_MARKETPLACE_ADDRESS; 
+      const wineProducerAddress = process.env.NEXT_PUBLIC_WINE_PRODUCER_ADDRESS; 
   
       const wineProducerContract = new ethers.Contract(
         wineProducerAddress,
