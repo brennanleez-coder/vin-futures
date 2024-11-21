@@ -8,11 +8,7 @@ import WineMarketplaceABI from "@/abi/WineMarketplace.json";
 import { ethers } from "ethers";
 
 const LOCAL_RPC_URL = "http://localhost:8545";
-const WINE_MARKETPLACE_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-
-const wineProducerAddress = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
-const wineDistributorAddress1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-const wineDistributorAddress2 = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
+const WINE_MARKETPLACE_ADDRESS = "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c";
 
 const Header = () => {
   const { user, setUser } = useGlobalContext();
@@ -27,7 +23,6 @@ const Header = () => {
         provider
       );
 
-      // Check roles via contract functions
       const isBuyer = await contract.isBuyer(address);
       const isSeller = await contract.isSeller(address);
 

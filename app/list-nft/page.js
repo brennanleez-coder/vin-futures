@@ -1,20 +1,22 @@
-
 'use client';
-import { useState, useEffect } from "react"
-import { Grape, Home, Menu, ShoppingCart, User, Wine, Upload } from 'lucide-react'
-import Link from "next/link"
-import { useGlobalContext } from "@/context/GlobalContext";
-import {toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
+import { ethers } from 'ethers';
+import WineProducerABI from "@/abi/WineProducer.json";
+import WineMarketplaceABI from "@/abi/WineMarketplace.json";
+import WineNFTABI from "@/abi/WineNFT.json";
+
 const Page = () => {
-  const { winesRetrieved, setWinesRetrieved } = useGlobalContext();
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    vintage: "",
-    region: "",
-    price: "",
+    name: '',
+    description: '',
+    vintage: '',
+    price: '',
+    grapeVariety: '',
+    numberOfBottles: '',
+    maturityDate: '',
   });
 
   const handleChange = (e) => {
@@ -26,54 +28,75 @@ const Page = () => {
   };
 
   const handleSubmit = async (e) => {
-
+    e.preventDefault();
+  
     try {
-      
-    //   const priceInWei = ethers.utils.parseEther(formData.price);
-    //   const provider = new ethers.providers.Web3Provider(window.ethereum);
-    //   const signer = provider.getSigner();
-    //   const contract = new ethers.Contract(
-    //     process.env.REACT_APP_WINE_NFT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    //     WineNFTABI.abi,
-    //     signer
-    //   );
+      if (!window.ethereum) {
+        toast.error("Ethereum provider is not available.");
+        return;
+      }
+  
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+  
+      const wineNFTAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
+      const wineMarketplaceAddress = "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"; 
+      const wineProducerAddress = "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"; 
+  
+      const wineProducerContract = new ethers.Contract(
+        wineProducerAddress,
+        WineProducerABI.abi,
+        signer
+      );
+  
+      const priceInWei = ethers.utils.parseEther(formData.price);
+      const vintage = parseInt(formData.vintage);
+      const grapeVariety = formData.grapeVariety;
+      const numberOfBottles = parseInt(formData.numberOfBottles);
+      const maturityDate = Math.floor(new Date(formData.maturityDate).getTime() / 1000);
+  
+      const tx = await wineProducerContract.createWineNFT(
+        priceInWei,
+        vintage,
+        grapeVariety,
+        numberOfBottles,
+        maturityDate,
+        { value: ethers.utils.parseEther("0.01"), gasLimit: 1000000 } 
+      );
+  
+      const receipt = await tx.wait();
+      const wineNFTCreatedEvent = receipt.events.find((event) => event.event === "WineNFTCreated");
+      if (!wineNFTCreatedEvent) {
+        throw new Error("WineNFTCreated event not found in transaction receipt.");
+      }
+      const wineId = wineNFTCreatedEvent.args.wineId.toNumber();
+  
+      console.log("Minted Wine NFT with Token ID:", wineId);
+  
+      const wineMarketplaceContract = new ethers.Contract(
+        wineMarketplaceAddress,
+        WineMarketplaceABI.abi,
+        signer
+      );
 
-    //   const tx = await contract.listWine(
-    //     formData.name,
-    //     formData.description,
-    //     parseInt(formData.vintage),
-    //     formData.region,
-    //     priceInWei
-    //   );
+      const wineNFTContract = new ethers.Contract(
+        wineNFTAddress,
+        WineNFTABI.abi,
+        signer
+      );
 
-    //   await tx.wait(); // Wait for the transaction to be mined
-
-      const newWine = {
-        id: winesRetrieved.length + 1,
-        producer: "xxxxx", // adjust based on the smart contract logic
-        price: formData.price,
-        vintage: formData.vintage,
-        grapeVariety: formData.description,
-        numberOfBottles: 1,
-        maturityDate: new Date().toLocaleDateString(),
-        redeemed: false,
-        owner: "xxxx" // await signer.getAddress(),
-      };
-
-      setWinesRetrieved((prev) => [...prev, newWine]);
-      toast.success("Wine NFT listed successfully!");
-      setFormData({ name: "", description: "", vintage: "", region: "", price: "" }); 
-      router.push("/");
-
+      await wineNFTContract.approve(wineMarketplaceAddress, wineId);
+      console.log(`Approved WineMarketplace to manage token ID: ${wineId}`);
+  
+      const listTx = await wineMarketplaceContract.listNFT(wineId, priceInWei);
+      await listTx.wait();
+  
+      toast.success("Wine NFT successfully created and listed!");
     } catch (error) {
-      console.error("Error listing NFT:", error);
-      toast.error("Failed to list Wine NFT. Please try again.");
+      console.error("Error creating and listing NFT:", error);
+      toast.error("An error occurred while creating the NFT. Check the console for details.");
     }
   };
-  useEffect(() => {
-    console.log("Updated winesRetrieved:", winesRetrieved);
-  }, [winesRetrieved]);
-
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -82,7 +105,7 @@ const Page = () => {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                NFT Details
+                Create Wine NFT
               </h2>
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
@@ -98,7 +121,7 @@ const Page = () => {
                     id="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="e.g. Chateau Digital Reserve 2023"
                   />
                 </div>
@@ -116,7 +139,7 @@ const Page = () => {
                     rows={3}
                     value={formData.description}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="Describe your Wine NFT"
                   ></textarea>
                 </div>
@@ -137,26 +160,63 @@ const Page = () => {
                     min="1900"
                     max="2099"
                     step="1"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="e.g. 2023"
                   />
                 </div>
 
                 <div>
                   <label
-                    htmlFor="region"
+                    htmlFor="grapeVariety"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Region
+                    Grape Variety
                   </label>
                   <input
                     type="text"
-                    name="region"
-                    id="region"
-                    value={formData.region}
+                    name="grapeVariety"
+                    id="grapeVariety"
+                    value={formData.grapeVariety}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                    placeholder="e.g. Blockchain Valley"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
+                    placeholder="e.g. Merlot"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="numberOfBottles"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Number of Bottles
+                  </label>
+                  <input
+                    type="number"
+                    name="numberOfBottles"
+                    id="numberOfBottles"
+                    value={formData.numberOfBottles}
+                    onChange={handleChange}
+                    min="1"
+                    step="1"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
+                    placeholder="e.g. 100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="maturityDate"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Maturity Date
+                  </label>
+                  <input
+                    type="date"
+                    name="maturityDate"
+                    id="maturityDate"
+                    value={formData.maturityDate}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                   />
                 </div>
 
@@ -175,16 +235,22 @@ const Page = () => {
                     onChange={handleChange}
                     step="0.01"
                     min="0"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="e.g. 0.5"
                   />
                 </div>
 
                 <div className="flex justify-end">
                   <button
-                    // type="submit"
-                    disabled={!formData.name || !formData.description || !formData.vintage || !formData.region || !formData.price}
-                    onClick={handleSubmit}
+                    disabled={
+                      !formData.name ||
+                      !formData.description ||
+                      !formData.vintage ||
+                      !formData.price ||
+                      !formData.grapeVariety ||
+                      !formData.numberOfBottles ||
+                      !formData.maturityDate
+                    }
                     className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                   >
                     List NFT for Sale

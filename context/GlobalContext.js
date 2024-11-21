@@ -11,9 +11,7 @@ require("dotenv").config();
 const GlobalContext = React.createContext();
 
 const LOCAL_RPC_URL = "http://localhost:8545";
-const wineNftContractAddress =
-  process.env.REACT_APP_WINE_NFT_ADDRESS ||
-  "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const wineNftContractAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
 
 console.log("wineNftContractAddress:", wineNftContractAddress);
 console.log("WineNFTABI:", WineNFTABI.abi);
