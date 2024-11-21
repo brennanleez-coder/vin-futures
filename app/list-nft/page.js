@@ -87,7 +87,8 @@ const Page = () => {
         signer
       );
 
-      await wineNFTContract.approve(wineMarketplaceAddress, wineId);
+      const approvalTx = await wineNFTContract.approve(wineMarketplaceAddress, wineId);
+      await approvalTx.wait();
       console.log(`Approved WineMarketplace to manage token ID: ${wineId}`);
 
       const listTx = await wineMarketplaceContract.listNFT(wineId, priceInWei);

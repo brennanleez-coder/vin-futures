@@ -76,16 +76,95 @@ export default function WinesPage() {
         }
     }, [user?.address, isClient]);
 
+    // Move fetchListedNFTs outside useEffect so it can be reused
+    const fetchListedNFTs = async () => {
+        if (!window.ethereum) {
+            console.error("Ethereum provider is not available.");
+            return;
+        }
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const wineMarketplaceContract = new ethers.Contract(
+            WINE_MARKETPLACE_ADDRESS,
+            WineMarketplaceABI.abi,
+            provider
+        );
+        const wineNFTContract = new ethers.Contract(
+            WINE_NFT_ADDRESS,
+            WineNFTABI.abi,
+            provider
+        );
+
+        try {
+            // Fetch all listed NFTs from the marketplace
+            const listedNFTs = await wineMarketplaceContract.getAllListedNFTs();
+
+            // Fetch metadata for each listed NFT
+            const updatedWines = await Promise.all(
+                listedNFTs.map(async (nft, index) => {
+                    const wineMetadata = await wineNFTContract.getWineById(
+                        nft.tokenId
+                    ); // Fetch wine details
+                    const priceHistory = generatePriceHistory(
+                        parseFloat(ethers.utils.formatEther(nft.price))
+                    );
+
+                    return {
+                        id: nft.tokenId.toString(),
+                        price: ethers.utils.formatEther(nft.price),
+                        seller: nft.seller,
+                        name: wineMetadata.wineName,
+                        description: wineMetadata.wineDescription,
+                        grapeVariety: wineMetadata.grapeVariety,
+                        vintage: wineMetadata.vintage,
+                        numberOfBottles: wineMetadata.numberOfBottles,
+                        region: "Unknown",
+                        maturityDate: new Date(
+                            wineMetadata.maturityDate * 1000
+                        ).toLocaleDateString(),
+                        image: `assets/WineNFT_${index + 1}.png`, // Replace with actual image logic
+                        priceHistory,
+                    };
+                })
+            );
+
+            setWines(updatedWines);
+        } catch (error) {
+            console.error("Error fetching listed NFTs:", error);
+        }
+    };
+
+    // Call fetchListedNFTs in useEffect
+    useEffect(() => {
+        fetchListedNFTs();
+    }, []);
+
     const handleBuy = async (tokenId, price) => {
         if (!window.ethereum) {
             alert("Ethereum provider is not available");
             return;
         }
-    
+
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
-    
+
+            const wineNFTContract = new ethers.Contract(
+                WINE_NFT_ADDRESS,
+                WineNFTABI.abi,
+                signer
+            );
+
+            const marketplaceAddress =
+                process.env.NEXT_PUBLIC_WINE_MARKETPLACE_ADDRESS;
+
+            // Set approval for the marketplace to transfer NFTs
+            const setApprovalTx = await wineNFTContract.setApprovalForAll(
+                marketplaceAddress,
+                true
+            );
+            await setApprovalTx.wait();
+
             const wineDistributorAddress =
                 process.env.NEXT_PUBLIC_WINE_DISTRIBUTOR_ADDRESS;
             const wineDistributorContract = new ethers.Contract(
@@ -93,85 +172,22 @@ export default function WinesPage() {
                 WineDistributorABI.abi,
                 signer
             );
-    
+
+            // Call the buyWine function in the WineDistributor contract
             const tx = await wineDistributorContract.buyWine(tokenId, {
                 value: ethers.utils.parseEther(price.toString()),
             });
             await tx.wait();
-    
+
             alert("NFT purchased successfully!");
-    
-            // Update the local state to remove the purchased NFT
-            setWines((prevWines) =>
-                prevWines.filter((wine) => wine.id !== tokenId.toString())
-            );
+
+            // Refresh the list of NFTs
+            await fetchListedNFTs();
         } catch (error) {
             console.error("Error buying NFT:", error);
             alert("An error occurred while trying to buy the NFT.");
         }
     };
-
-    useEffect(() => {
-        const fetchListedNFTs = async () => {
-            if (!window.ethereum) {
-                console.error("Ethereum provider is not available.");
-                return;
-            }
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const wineMarketplaceContract = new ethers.Contract(
-                WINE_MARKETPLACE_ADDRESS,
-                WineMarketplaceABI.abi,
-                provider
-            );
-            const wineNFTContract = new ethers.Contract(
-                WINE_NFT_ADDRESS,
-                WineNFTABI.abi,
-                provider
-            );
-
-            try {
-                // Fetch all listed NFTs from the marketplace
-                const listedNFTs =
-                    await wineMarketplaceContract.getAllListedNFTs();
-
-                // Fetch metadata for each listed NFT
-                const updatedWines = await Promise.all(
-                    listedNFTs.map(async (nft, index) => {
-                        const wineMetadata = await wineNFTContract.getWineById(
-                            nft.tokenId
-                        ); // Fetch wine details
-                        const priceHistory = generatePriceHistory(
-                            parseFloat(ethers.utils.formatEther(nft.price))
-                        );
-
-                        return {
-                            id: nft.tokenId.toString(),
-                            price: ethers.utils.formatEther(nft.price),
-                            seller: nft.seller,
-                            name: wineMetadata.wineName,
-                            description: wineMetadata.wineDescription,
-                            grapeVariety: wineMetadata.grapeVariety,
-                            vintage: wineMetadata.vintage,
-                            numberOfBottles: wineMetadata.numberOfBottles,
-                            region: "Unknown",
-                            maturityDate: new Date(
-                                wineMetadata.maturityDate * 1000
-                            ).toLocaleDateString(),
-                            image: `assets/WineNFT_${index + 1}.png`, // Replace with actual image logic
-                            priceHistory,
-                        };
-                    })
-                );
-
-                setWines(updatedWines);
-            } catch (error) {
-                console.error("Error fetching listed NFTs:", error);
-            }
-        };
-
-        fetchListedNFTs();
-    }, []);
 
     return (
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
