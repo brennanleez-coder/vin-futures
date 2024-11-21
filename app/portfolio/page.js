@@ -69,6 +69,8 @@ const Page = () => {
                             ), // Convert BigNumber to Date
                             owner: owner,
                             image: `/assets/WineNFT_${tokenId}.png`,
+                            producer: wineData.producer,
+                            redeemed: wineData.redeemed,
                         });
                     }
                 } catch (err) {
@@ -91,6 +93,38 @@ const Page = () => {
     useEffect(() => {
         fetchOwnedNFTs();
     }, []);
+
+    const redeemWine = async (wineId) => {
+        try {
+            if (!window.ethereum) {
+                alert("Ethereum provider is not available");
+                return;
+            }
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+
+            const wineNFTContract = new ethers.Contract(
+                WINE_NFT_ADDRESS,
+                WineNFTABI.abi,
+                signer
+            );
+
+            const tx = await wineNFTContract.redeemWine(wineId);
+            await tx.wait();
+
+            alert("Wine redeemed successfully! Producer will be in contact with you for delivery.");
+            setOwnedWines((prevWines) =>
+                prevWines.map((wine) =>
+                    wine.id === wineId ? { ...wine, redeemed: true } : wine
+                )
+            );
+            await fetchOwnedNFTs();
+        } catch (error) {
+            console.error("Error redeeming wine:", error);
+            alert("An error occurred while redeeming the wine.");
+        }
+    };
 
     return (
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
@@ -179,7 +213,7 @@ const Page = () => {
                                         Region: {wine.region}
                                     </p>
                                     <p className="mt-2 text-sm text-gray-600">
-                                        Owner: {wine.owner}
+                                        Producer: {wine.producer}
                                     </p>
                                     <p className="mt-2 text-sm font-bold text-purple-600">
                                         Price: {wine.price} ETH
@@ -195,6 +229,27 @@ const Page = () => {
                                         Maturity Date:{" "}
                                         {wine.maturityDate.toLocaleDateString()}
                                     </p>
+                                    <button
+                                        onClick={() => redeemWine(wine.id)}
+                                        disabled={
+                                            new Date(wine.maturityDate) >
+                                                new Date() || wine.redeemed
+                                        }
+                                        className={`mt-4 px-4 py-2 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                                            new Date(wine.maturityDate) <=
+                                                new Date() && !wine.redeemed
+                                                ? "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500"
+                                                : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                                        }`}
+                                    >
+                                        {wine.redeemed ? "Redeemed" : "Redeem"}
+                                    </button>
+                                    {new Date(wine.maturityDate) > new Date() &&
+                                        !wine.redeemed && (
+                                            <p className="text-red-500 text-sm mt-2">
+                                                Maturity Date not reached
+                                            </p>
+                                        )}
                                 </div>
                             </div>
                         ))
