@@ -10,8 +10,8 @@ import WineNFTABI from "@/abi/WineNFT.json";
 const Page = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    wineName: '',
+    wineDescription: '',
     vintage: '',
     price: '',
     grapeVariety: '',
@@ -29,50 +29,52 @@ const Page = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       if (!window.ethereum) {
         toast.error("Ethereum provider is not available.");
         return;
       }
-  
+
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-  
+
       const wineNFTAddress = process.env.NEXT_PUBLIC_WINE_NFT_ADDRESS;
       const wineMarketplaceAddress = process.env.NEXT_PUBLIC_WINE_MARKETPLACE_ADDRESS; 
       const wineProducerAddress = process.env.NEXT_PUBLIC_WINE_PRODUCER_ADDRESS; 
-  
+
       const wineProducerContract = new ethers.Contract(
         wineProducerAddress,
         WineProducerABI.abi,
         signer
       );
-  
+
       const priceInWei = ethers.utils.parseEther(formData.price);
       const vintage = parseInt(formData.vintage);
       const grapeVariety = formData.grapeVariety;
       const numberOfBottles = parseInt(formData.numberOfBottles);
       const maturityDate = Math.floor(new Date(formData.maturityDate).getTime() / 1000);
-  
+
       const tx = await wineProducerContract.createWineNFT(
+        formData.wineName,
+        formData.wineDescription,
         priceInWei,
         vintage,
         grapeVariety,
         numberOfBottles,
         maturityDate,
-        { value: ethers.utils.parseEther("0.01"), gasLimit: 1000000 } 
+        { value: ethers.utils.parseEther("0.01"), gasLimit: 1000000 }
       );
-  
+
       const receipt = await tx.wait();
       const wineNFTCreatedEvent = receipt.events.find((event) => event.event === "WineNFTCreated");
       if (!wineNFTCreatedEvent) {
         throw new Error("WineNFTCreated event not found in transaction receipt.");
       }
       const wineId = wineNFTCreatedEvent.args.wineId.toNumber();
-  
+
       console.log("Minted Wine NFT with Token ID:", wineId);
-  
+
       const wineMarketplaceContract = new ethers.Contract(
         wineMarketplaceAddress,
         WineMarketplaceABI.abi,
@@ -87,10 +89,10 @@ const Page = () => {
 
       await wineNFTContract.approve(wineMarketplaceAddress, wineId);
       console.log(`Approved WineMarketplace to manage token ID: ${wineId}`);
-  
+
       const listTx = await wineMarketplaceContract.listNFT(wineId, priceInWei);
       await listTx.wait();
-  
+
       toast.success("Wine NFT successfully created and listed!");
     } catch (error) {
       console.error("Error creating and listing NFT:", error);
@@ -110,16 +112,16 @@ const Page = () => {
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                   <label
-                    htmlFor="name"
+                    htmlFor="wineName"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    NFT Name
+                    Wine Name
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    id="name"
-                    value={formData.name}
+                    name="wineName"
+                    id="wineName"
+                    value={formData.wineName}
                     onChange={handleChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="e.g. Chateau Digital Reserve 2023"
@@ -128,16 +130,16 @@ const Page = () => {
 
                 <div>
                   <label
-                    htmlFor="description"
+                    htmlFor="wineDescription"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Description
+                    Wine Description
                   </label>
                   <textarea
-                    id="description"
-                    name="description"
+                    id="wineDescription"
+                    name="wineDescription"
                     rows={3}
-                    value={formData.description}
+                    value={formData.wineDescription}
                     onChange={handleChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2"
                     placeholder="Describe your Wine NFT"
@@ -243,8 +245,8 @@ const Page = () => {
                 <div className="flex justify-end">
                   <button
                     disabled={
-                      !formData.name ||
-                      !formData.description ||
+                      !formData.wineName ||
+                      !formData.wineDescription ||
                       !formData.vintage ||
                       !formData.price ||
                       !formData.grapeVariety ||
