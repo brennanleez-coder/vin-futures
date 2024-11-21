@@ -20,9 +20,9 @@ const navItems = [
   {
     link: "/list-nft",
     icon: <Wine className="h-5 w-5 mr-3 text-blue-600" />,
-    title: "List NFT",
+    title: "Create Wine NFT",
     requiresAuth: true,
-    sellerOnly: true, // This item is for sellers only
+    sellerOnly: true, // This item is for Wine Producer only
   },
   {
     link: "/profile",

@@ -10,10 +10,6 @@ import { ethers } from "ethers";
 const LOCAL_RPC_URL = "http://localhost:8545";
 const WINE_MARKETPLACE_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
 
-const wineProducerAddress = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
-const wineDistributorAddress1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-const wineDistributorAddress2 = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
-
 const Header = () => {
   const { user, setUser } = useGlobalContext();
   const [isClient, setIsClient] = useState(false);
